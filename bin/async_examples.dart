@@ -1,13 +1,16 @@
+import 'dart:developer';
 import 'dart:io';
 
 void main() async {
-  // await benchmarkFibAtAsync(1);
-  // await benchmarkFibAtAsync(10);
-  // await benchmarkFibAtAsync(100);
-  // await benchmarkFibAtAsync(1000);
-  benchmarkFibStream(1);
-  benchmarkFibStream(10);
-  benchmarkFibStream(100);
+  log("Running Future Benchmark");
+  await benchmarkFibAtAsync(1);
+  await benchmarkFibAtAsync(10);
+  await benchmarkFibAtAsync(100);
+
+  log("Running Stream Benchmark");
+  await benchmarkFibStream(1);
+  await benchmarkFibStream(10);
+  await benchmarkFibStream(100);
 }
 
 Future<int> fibAtAsync(int step) async => calculateFibAsync(0, 0, step);
@@ -30,7 +33,7 @@ Future<void> benchmarkFibAtAsync(int step) async {
   timer.start();
   await fibAtAsync(step);
   timer.stop();
-  print("[Benchmarking $step steps] elapsed: ${timer.elapsed}");
+  log("[Benchmarking $step steps] elapsed: ${timer.elapsed}");
 }
 
 Stream<int> fibStream(int step) async* {
@@ -40,21 +43,24 @@ Stream<int> fibStream(int step) async* {
 Stream<int> calcFibStream(int p, int n, int step) async* {
   if (step < 0) {
     yield p;
+    return;
   }
   final prevNum = n;
   final newNum = (p == 0 && n == 0) ? 1 : p + n;
   final newStep = step - 1;
-  print("p: $p, n: $n, step: $step");
-  sleep(Duration(milliseconds: 50));
-  yield* (step == 0)
-      ? Stream.value(n)
-      : calcFibStream(prevNum, newNum, newStep);
+  // print("p: $p, n: $n, step: $step");
+  sleep(Duration(milliseconds: 1));
+  if (step == 0) {
+    yield n;
+    return;
+  }
+  yield* calcFibStream(prevNum, newNum, newStep);
 }
 
-Stream<void> benchmarkFibStream(int step) async* {
+Future<void> benchmarkFibStream(int step) async {
   Stopwatch timer = Stopwatch();
   timer.start();
-  fibStream(step);
+  await for (int n in fibStream(step)) {}
   timer.stop();
-  print("[Benchmarking $step steps] elapsed: ${timer.elapsed}");
+  log("[Benchmarking $step steps] elapsed: ${timer.elapsed}");
 }
